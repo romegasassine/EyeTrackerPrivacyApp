@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from "react";
-
-/* global FaceMesh, Camera */
+import { FaceMesh } from "@mediapipe/face_mesh";
+import { Camera } from "@mediapipe/camera_utils";
 
 const FaceTracker = ({ setBlur }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const faceMesh = new window.FaceMesh({
+    const faceMesh = new FaceMesh({
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
@@ -19,42 +19,42 @@ const FaceTracker = ({ setBlur }) => {
     });
 
     faceMesh.onResults((results) => {
-      console.log("onResults called");
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
 
-      if (results.multiFaceLandmarks.length > 0) {
-        const landmarks = results.multiFaceLandmarks[0];
-        const leftEyeTop = landmarks[159];
-        const leftEyeBottom = landmarks[145];
-        const rightEyeTop = landmarks[386];
-        const rightEyeBottom = landmarks[374];
+      const landmarks = results.multiFaceLandmarks[0];
 
-        const leftEyeDist = Math.abs(leftEyeTop.y - leftEyeBottom.y);
-        const rightEyeDist = Math.abs(rightEyeTop.y - rightEyeBottom.y);
+      const leftEyeTop = landmarks[159];
+      const leftEyeBottom = landmarks[145];
+      const rightEyeTop = landmarks[386];
+      const rightEyeBottom = landmarks[374];
 
-        const eyeClosed = leftEyeDist < 0.01 && rightEyeDist < 0.01;
+      const leftEyeDist = Math.abs(leftEyeTop.y - leftEyeBottom.y);
+      const rightEyeDist = Math.abs(rightEyeTop.y - rightEyeBottom.y);
 
-        if (eyeClosed) {
-          console.log("👁️ Eyes closed");
-          setBlur(true);
-        } else {
-          console.log("👁️ Eyes open");
-          setBlur(false);
-        }
+      const eyeClosed = leftEyeDist < 0.01 && rightEyeDist < 0.01;
+
+      if (eyeClosed) {
+        console.log("👁️ Eyes closed");
+        setBlur(true);
       } else {
-        console.log("No face detected");
+        console.log("👁️ Eyes open");
+        setBlur(false);
       }
     });
 
-    if (videoRef.current) {
-      const camera = new window.Camera(videoRef.current, {
+    const startCamera = async () => {
+      const camera = new Camera(videoRef.current, {
         onFrame: async () => {
-          console.log("sending frame");
           await faceMesh.send({ image: videoRef.current });
         },
         width: 640,
         height: 480,
       });
       camera.start();
+    };
+
+    if (videoRef.current) {
+      startCamera();
     }
   }, [setBlur]);
 
