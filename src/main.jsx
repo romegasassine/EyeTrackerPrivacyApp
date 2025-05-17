@@ -1,3 +1,6 @@
+// Patch for MediaPipe WASM bug
+window.arguments_ = [];
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

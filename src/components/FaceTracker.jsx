@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 
 /* global FaceMesh, Camera */
 
-const FaceTracker = () => {
+const FaceTracker = ({ setBlur }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -19,9 +19,10 @@ const FaceTracker = () => {
     });
 
     faceMesh.onResults((results) => {
+      console.log("onResults called");
+
       if (results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
-
         const leftEyeTop = landmarks[159];
         const leftEyeBottom = landmarks[145];
         const rightEyeTop = landmarks[386];
@@ -34,15 +35,20 @@ const FaceTracker = () => {
 
         if (eyeClosed) {
           console.log("👁️ Eyes closed");
+          setBlur(true);
         } else {
           console.log("👁️ Eyes open");
+          setBlur(false);
         }
+      } else {
+        console.log("No face detected");
       }
     });
 
     if (videoRef.current) {
       const camera = new window.Camera(videoRef.current, {
         onFrame: async () => {
+          console.log("sending frame");
           await faceMesh.send({ image: videoRef.current });
         },
         width: 640,
@@ -50,7 +56,7 @@ const FaceTracker = () => {
       });
       camera.start();
     }
-  }, []);
+  }, [setBlur]);
 
   return (
     <video
